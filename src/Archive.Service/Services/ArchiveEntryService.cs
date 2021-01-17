@@ -1,0 +1,161 @@
+﻿using Cosei.Service.RabbitMq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Archive.Contracts;
+using Archive.Service.Model;
+using Archive.Service.Query;
+using Archive.Service.Repository;
+
+namespace Archive.Service.Services
+{
+	public class ArchiveEntryService : IDisposable
+	{
+		private readonly IArchiveEntryRepository _archiveEntryRepository;
+		private readonly IArchiveEntryQuery _archiveEntryQuery;
+		private readonly IPublisher _publisher;
+
+		public ArchiveEntryService(IArchiveEntryRepository archiveEntryRepository,
+			IArchiveEntryQuery archiveEntryQuery,
+			IPublisher publisher)
+		{
+			_archiveEntryRepository = archiveEntryRepository;
+			_archiveEntryQuery = archiveEntryQuery;
+			_publisher = publisher;
+		}
+
+		public void CreateArchiveEntry(CreateArchiveEntry command, string userName)
+		{
+			var item = new ArchiveEntryModel()
+			{
+				Id = command.Id,
+				Date = command.Date,
+				Description = command.Description,
+				Groups = command.Groups,
+				OriginalName = command.OriginalName,
+				IsFolder = command.IsFolder,
+				FileSize = command.FileSize,
+			};
+
+			_archiveEntryRepository.Insert(item);
+
+			_publisher.PublishAsync(new ArchiveEntryCreated(
+				command.Id,
+				command.Date,
+				command.Description,
+				command.Groups,
+				command.OriginalName,
+				command.IsFolder,
+				command.FileSize));
+		}
+
+		public void UpdateArchiveEntry(UpdateArchiveEntry command, string userName)
+		{
+			var item = _archiveEntryRepository.Get(command.Id);
+			
+			item.Date = command.Date;
+			item.Description = command.Description;
+			item.OriginalName = command.OriginalName;
+			item.IsFolder = command.IsFolder;
+			item.FileSize = command.FileSize;
+
+			while (item.Groups.Count > command.Groups.Count)
+			{
+				item.Groups.RemoveAt(item.Groups.Count - 1);
+			}
+
+			while (item.Groups.Count < command.Groups.Count)
+			{
+				item.Groups.Add(new ArchiveGroup());
+			}
+
+			for (int i = 0; i < item.Groups.Count; i++)
+			{
+				item.Groups[i].GroupName = command.Groups[i].GroupName;
+			}
+
+			_archiveEntryRepository.Update(item);
+
+			_publisher.PublishAsync(new ArchiveEntryUpdated(
+				command.Id,
+				command.Date,
+				command.Description,
+				command.Groups,
+				command.OriginalName,
+				command.IsFolder,
+				command.FileSize));
+		}
+
+		public void DeleteArchiveEntry(Guid id, string userName)
+		{
+			_archiveEntryRepository.Delete(id);
+
+			_publisher.PublishAsync(new ArchiveEntryDeleted(id));
+		}
+
+		public async Task<ArchiveEntry> GetItemAsync(Guid id)
+		{
+			var item = await _archiveEntryQuery.GetAsync(id);
+
+			if (item == null)
+			{
+				return null;
+			}
+
+			return new ArchiveEntry
+			{
+				Id = item.Id,
+				Date = item.Date,
+				Description = item.Description,
+				Groups = item.Groups,
+				OriginalName = item.OriginalName,
+				IsFolder = item.IsFolder,
+				FileSize = item.FileSize,
+			};
+		}
+
+		public async IAsyncEnumerable<ArchiveEntry> GetItemsForUserAsync(string userName)
+		{
+			await foreach (var item in _archiveEntryQuery.GetAllAsync())
+			{
+				yield return new ArchiveEntry
+				{
+					Id = item.Id,
+					Date = item.Date,
+					Description = item.Description,
+					Groups = item.Groups,
+					OriginalName = item.OriginalName,
+					IsFolder = item.IsFolder,
+					FileSize = item.FileSize,
+				};
+			}
+		}
+
+		#region IDisposable Support
+
+		private bool disposedValue = false; // To detect redundant calls
+
+		protected virtual void Dispose(bool disposing)
+		{
+			if (!disposedValue)
+			{
+				disposedValue = true;
+
+				if (disposing)
+				{
+					(_archiveEntryRepository as IDisposable)?.Dispose();
+					(_archiveEntryQuery as IDisposable)?.Dispose();
+				}
+			}
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		#endregion IDisposable Support
+	}
+}

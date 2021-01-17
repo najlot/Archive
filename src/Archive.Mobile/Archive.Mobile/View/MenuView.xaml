@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:loc="clr-namespace:Archive.ClientBase.Localisation;assembly=Archive.ClientBase"
+             mc:Ignorable="d"
+			 Title="Menu"
+             x:Class="Archive.Mobile.View.MenuView">
+	
+	<ContentPage.Content>
+		<StackLayout>
+			<Button Text="ArchiveEntries" Command="{Binding NavigateToArchiveEntries}"
+					HorizontalOptions="FillAndExpand" Margin="1" BackgroundColor="#263238" TextColor="#ffffff" />
+			<Button Text="Users" Command="{Binding NavigateToUsers}"
+					HorizontalOptions="FillAndExpand" Margin="1" BackgroundColor="#263238" TextColor="#ffffff" />
+		</StackLayout>
+	</ContentPage.Content>
+</ContentPage>
