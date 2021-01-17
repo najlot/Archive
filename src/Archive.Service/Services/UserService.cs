@@ -7,6 +7,8 @@ using Archive.Contracts;
 using Archive.Service.Model;
 using Archive.Service.Query;
 using Archive.Service.Repository;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace Archive.Service.Services
 {
@@ -27,12 +29,18 @@ namespace Archive.Service.Services
 
 		public void CreateUser(CreateUser command, string userName)
 		{
+			if (_userRepository.Get(command.Username) != null)
+			{
+				throw new InvalidOperationException("User already exists!");
+			}
+
 			var item = new UserModel()
 			{
 				Id = command.Id,
 				Username = command.Username,
 				EMail = command.EMail,
-				Password = command.Password,
+				PasswordHash = HashPassword(command.Password),
+				IsActive = true
 			};
 
 			_userRepository.Insert(item);
@@ -41,16 +49,24 @@ namespace Archive.Service.Services
 				command.Id,
 				command.Username,
 				command.EMail,
-				command.Password));
+				""));
 		}
 
 		public void UpdateUser(UpdateUser command, string userName)
 		{
 			var item = _userRepository.Get(command.Id);
-			
-			item.Username = command.Username;
+
+			if (item.Username != userName && userName != "admin")
+			{
+				throw new InvalidOperationException("You must not modify other users!");
+			}
+
 			item.EMail = command.EMail;
-			item.Password = command.Password;
+
+			if (!string.IsNullOrWhiteSpace(command.Password))
+			{
+				item.PasswordHash = HashPassword(command.Password);
+			}
 
 			_userRepository.Update(item);
 
@@ -58,12 +74,21 @@ namespace Archive.Service.Services
 				command.Id,
 				command.Username,
 				command.EMail,
-				command.Password));
+				""));
 		}
 
 		public void DeleteUser(Guid id, string userName)
 		{
-			_userRepository.Delete(id);
+			var item = _userRepository.Get(id);
+
+			if (item.Username != userName && userName != "admin")
+			{
+				throw new InvalidOperationException("You must not delete other user!");
+			}
+
+			item.IsActive = false;
+
+			_userRepository.Update(item);
 
 			_publisher.PublishAsync(new UserDeleted(id));
 		}
@@ -82,7 +107,6 @@ namespace Archive.Service.Services
 				Id = item.Id,
 				Username = item.Username,
 				EMail = item.EMail,
-				Password = item.Password,
 			};
 		}
 
@@ -90,14 +114,47 @@ namespace Archive.Service.Services
 		{
 			await foreach (var item in _userQuery.GetAllAsync())
 			{
+				if (!item.IsActive)
+				{
+					continue;
+				}
+
 				yield return new User
 				{
 					Id = item.Id,
 					Username = item.Username,
 					EMail = item.EMail,
-					Password = item.Password,
 				};
 			}
+		}
+
+		public UserModel GetUserModelFromName(string userName)
+		{
+			var user = _userRepository.Get(userName);
+
+			if (user == null && userName == "admin")
+			{
+				var id = Guid.NewGuid();
+
+				var command = new CreateUser(
+					id,
+					userName,
+					"",
+					userName);
+
+				CreateUser(command, userName);
+
+				user = _userRepository.Get(id);
+			}
+
+			return user;
+		}
+
+		private static byte[] HashPassword(string password)
+		{
+			var passwordBytes = Encoding.UTF8.GetBytes(password);
+			using var sha = SHA256.Create();
+			return sha.ComputeHash(passwordBytes);
 		}
 
 		#region IDisposable Support

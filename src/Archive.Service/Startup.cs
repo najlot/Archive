@@ -8,6 +8,8 @@ using Archive.Service.Configuration;
 using Archive.Service.Query;
 using Archive.Service.Repository;
 using Archive.Service.Services;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System.IO;
 
 namespace Archive.Service
 {
@@ -25,11 +27,25 @@ namespace Archive.Service
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
+			services.Configure<KestrelServerOptions>(options =>
+			{
+				options.Limits.MaxRequestBodySize = int.MaxValue; // Default value is 30 MB
+			});
+
 			var rmqConfig = ConfigurationReader.ReadConfiguration<RabbitMqConfiguration>();
 			var fileConfig = ConfigurationReader.ReadConfiguration<FileConfiguration>();
+			var blobConfig = ConfigurationReader.ReadConfiguration<BlobConfiguration>();
 			var mysqlConfig = ConfigurationReader.ReadConfiguration<MySqlConfiguration>();
 			var mongoDbConfig = ConfigurationReader.ReadConfiguration<MongoDbConfiguration>();
 			var serviceConfig = ConfigurationReader.ReadConfiguration<ServiceConfiguration>();
+
+			if (blobConfig == null)
+			{
+				blobConfig = new BlobConfiguration();
+			}
+
+			Directory.CreateDirectory(blobConfig.BlobsPath);
+			services.AddSingleton(blobConfig);
 
 			if (string.IsNullOrWhiteSpace(serviceConfig?.Secret))
 			{

@@ -40,6 +40,21 @@ namespace Archive.Service.Controllers
 			return Ok(item);
 		}
 
+		[HttpGet("[action]/{id}")]
+		public async Task<FileContentResult> GetFile(Guid id)
+		{
+			var bytes = await _archiveEntryService.GetBytesAsync(id);
+			return File(bytes, "application/octet-stream");
+		}
+
+		[HttpPost("[action]")]
+		public async Task<ActionResult> AddBase64File(AddBase64File command)
+		{
+			var bytes = Convert.FromBase64String(command.Base64Content);
+			await _archiveEntryService.SaveBytesAsync(command.Id, bytes);
+			return Ok();
+		}
+
 		[HttpPost]
 		public ActionResult Create([FromBody] CreateArchiveEntry command)
 		{

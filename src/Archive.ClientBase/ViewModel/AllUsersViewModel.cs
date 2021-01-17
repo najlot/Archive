@@ -208,7 +208,8 @@ namespace Archive.ClientBase.ViewModel
 					_errorService,
 					item,
 					_navigationService,
-					_messenger);
+					_messenger,
+					true);
 
 
 				await _navigationService.NavigateForward(itemVm);

@@ -22,12 +22,14 @@ namespace Archive.ClientBase.ViewModel
 
 		public UserModel Item { get => _item; private set => Set(nameof(Item), ref _item, value); }
 		public bool IsBusy { get => _isBusy; private set => Set(nameof(IsBusy), ref _isBusy, value); }
+		public bool CanModifyUsername { get; private set; }
 
 		public UserViewModel(
 			ErrorService errorService,
 			UserModel userModel,
 			INavigationService navigationService,
-			Messenger messenger)
+			Messenger messenger,
+			bool canModifyUsername = false)
 		{
 			Item = userModel;
 			_errorService = errorService;
@@ -37,6 +39,7 @@ namespace Archive.ClientBase.ViewModel
 			SaveCommand = new AsyncCommand(SaveAsync, DisplayError);
 			DeleteCommand = new AsyncCommand(DeleteAsync, DisplayError);
 			EditUserCommand = new AsyncCommand(EditUserAsync, DisplayError, () => !IsBusy);
+			CanModifyUsername = canModifyUsername;
 		}
 
 		private async Task DisplayError(Task task)

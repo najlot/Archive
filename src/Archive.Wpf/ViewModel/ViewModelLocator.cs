@@ -21,6 +21,7 @@ namespace Archive.Wpf.ViewModel
 			var errorService = new ErrorService(Main);
 
 			serviceCollection.AddSingleton<IDispatcherHelper, DispatcherHelper>();
+			serviceCollection.AddSingleton<IDiskSearcher, DiskSearcher>();
 
 			// Register services
 			serviceCollection.AddSingleton<ErrorService>();

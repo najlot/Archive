@@ -14,7 +14,7 @@
 			<converter:EnumToTranslationConverter x:Key="EnumToTranslationConverter" />
 		</ResourceDictionary>
 	</UserControl.Resources>
-	
+
 	<DockPanel>
 		<WrapPanel FlowDirection="RightToLeft" DockPanel.Dock="Top">
 			<Button ToolTip="{x:Static loc:CommonLoc.Delete}" Command="{Binding DeleteCommand}" Margin="5">
@@ -42,15 +42,15 @@
 			<StackPanel Margin="2,0" MinWidth="400" MinHeight="200"
 						HorizontalAlignment="Center" VerticalAlignment="Center">
 				<DockPanel Margin="5">
-					<Label Content="{x:Static loc:UserLoc.Username}" MinWidth="75" />
-					<TextBox Text="{Binding Item.Username}" />
+					<Label Content="{x:Static loc:UserLoc.Username}" MinWidth="90" />
+					<TextBox Text="{Binding Item.Username}" IsEnabled="{Binding CanModifyUsername}" />
 				</DockPanel>
 				<DockPanel Margin="5">
-					<Label Content="{x:Static loc:UserLoc.EMail}" MinWidth="75" />
+					<Label Content="{x:Static loc:UserLoc.EMail}" MinWidth="90" />
 					<TextBox Text="{Binding Item.EMail}" />
 				</DockPanel>
 				<DockPanel Margin="5">
-					<Label Content="{x:Static loc:UserLoc.Password}" MinWidth="75" />
+					<Label Content="{x:Static loc:UserLoc.Password}" MinWidth="90" />
 					<TextBox Text="{Binding Item.Password}" />
 				</DockPanel>
 			</StackPanel>

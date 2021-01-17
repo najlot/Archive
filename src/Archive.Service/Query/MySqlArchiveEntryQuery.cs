@@ -46,6 +46,7 @@ namespace Archive.Service.Query
 
 			foreach (var item in items)
 			{
+				item.Groups = (await db.QueryAsync<ArchiveGroup>("SELECT * FROM ArchiveEntry_Groups WHERE ArchiveEntryModelId=@id", new { item.Id })).ToList();
 				yield return item;
 			}
 		}

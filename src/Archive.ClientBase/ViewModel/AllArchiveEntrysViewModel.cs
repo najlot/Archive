@@ -13,11 +13,13 @@ namespace Archive.ClientBase.ViewModel
 	{
 		private readonly ArchiveEntryService _archiveEntryService;
 		private readonly INavigationService _navigationService;
+		private readonly IDiskSearcher _diskSearcher;
 		private readonly Messenger _messenger;
 		private readonly ErrorService _errorService;
 
 		private bool _isBusy;
-		private ObservableCollection<ArchiveEntryViewModel> _archiveEntries = new ObservableCollection<ArchiveEntryViewModel>();
+		private string _filter = "";
+		private FilteredObservableCollection<ArchiveEntryViewModel> _archiveEntries = new FilteredObservableCollection<ArchiveEntryViewModel>();
 
 		public bool IsBusy
 		{
@@ -25,22 +27,61 @@ namespace Archive.ClientBase.ViewModel
 			private set => Set(nameof(IsBusy), ref _isBusy, value);
 		}
 
-		public ObservableCollection<ArchiveEntryViewModel> ArchiveEntries
+		public string Filter
+		{
+			get => _filter;
+			set
+			{
+				_filter = value;
+				ArchiveEntries.Refresh();
+			}
+		}
+
+		public FilteredObservableCollection<ArchiveEntryViewModel> ArchiveEntries
 		{
 			get => _archiveEntries;
-			private set => Set(nameof(ArchiveEntries), ref _archiveEntries, value);
+			private set
+			{
+				value.Filter = FilterArchiveEntry;
+				Set(nameof(ArchiveEntries), ref _archiveEntries, value);
+			}
+		}
+
+		private bool FilterArchiveEntry(ArchiveEntryViewModel item)
+		{
+			if (string.IsNullOrEmpty(Filter))
+			{
+				return true;
+			}
+
+			if (!string.IsNullOrEmpty(item.Item.OriginalName)
+				&& item.Item.OriginalName.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			{
+				return true;
+			}
+
+			if (!string.IsNullOrEmpty(item.Item.Description)
+				&& item.Item.Description.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		public AllArchiveEntriesViewModel(ErrorService errorService,
 			ArchiveEntryService archiveEntryService,
 			INavigationService navigationService,
+			IDiskSearcher diskSearcher,
 			Messenger messenger)
 		{
 			_errorService = errorService;
 			_archiveEntryService = archiveEntryService;
 			_navigationService = navigationService;
+			_diskSearcher = diskSearcher;
 			_messenger = messenger;
 
+			_messenger.Register<ExportEntry>(Handle);
 			_messenger.Register<SaveArchiveEntry>(Handle);
 			_messenger.Register<EditArchiveEntry>(Handle);
 			_messenger.Register<DeleteArchiveEntry>(Handle);
@@ -56,6 +97,11 @@ namespace Archive.ClientBase.ViewModel
 		private async Task DisplayError(Task task)
 		{
 			await _errorService.ShowAlert("Error...", task.Exception);
+		}
+
+		private async Task Handle(ExportEntry obj)
+		{
+			await _archiveEntryService.ExportEntryAsync(obj.Id, obj.IsFolder, obj.DestinationPath);
 		}
 
 		private void Handle(ArchiveEntryCreated obj)
@@ -74,17 +120,18 @@ namespace Archive.ClientBase.ViewModel
 					FileSize = obj.FileSize,
 				},
 				_navigationService,
+				_diskSearcher,
 				_messenger));
 		}
 
 		private void Handle(ArchiveEntryUpdated obj)
 		{
-			var oldItem = ArchiveEntries.FirstOrDefault(i => i.Item.Id == obj.Id);
+			var oldItem = ArchiveEntries.Items.FirstOrDefault(i => i.Item.Id == obj.Id);
 			var index = -1;
 
 			if (oldItem != null)
 			{
-				index = ArchiveEntries.IndexOf(oldItem);
+				index = ArchiveEntries.Items.IndexOf(oldItem);
 
 				if (index != -1)
 				{
@@ -111,12 +158,13 @@ namespace Archive.ClientBase.ViewModel
 					FileSize = obj.FileSize,
 				},
 				_navigationService,
+				_diskSearcher,
 				_messenger));
 		}
 
 		private void Handle(ArchiveEntryDeleted obj)
 		{
-			var oldItem = ArchiveEntries.FirstOrDefault(i => i.Item.Id == obj.Id);
+			var oldItem = ArchiveEntries.Items.FirstOrDefault(i => i.Item.Id == obj.Id);
 
 			if (oldItem != null)
 			{
@@ -157,6 +205,7 @@ namespace Archive.ClientBase.ViewModel
 					_errorService,
 					item,
 					_navigationService,
+					_diskSearcher,
 					_messenger);
 
 				_messenger.Register<EditArchiveGroup>(vm.Handle);
@@ -181,13 +230,13 @@ namespace Archive.ClientBase.ViewModel
 		{
 			try
 			{
-				if (ArchiveEntries.Any(i => i.Item.Id == obj.Item.Id))
+				if (ArchiveEntries.Items.Any(i => i.Item.Id == obj.Item.Id))
 				{
 					await _archiveEntryService.UpdateItemAsync(obj.Item);
 				}
 				else
 				{
-					await _archiveEntryService.AddItemAsync(obj.Item);
+					await _archiveEntryService.AddItemAsync(obj.Item, obj.Path);
 				}
 			}
 			catch (Exception ex)
@@ -217,6 +266,7 @@ namespace Archive.ClientBase.ViewModel
 					_errorService,
 					item,
 					_navigationService,
+					_diskSearcher,
 					_messenger);
 
 				_messenger.Register<EditArchiveGroup>(itemVm.Handle);
@@ -250,11 +300,12 @@ namespace Archive.ClientBase.ViewModel
 
 				var archiveEntries = await _archiveEntryService.GetItemsAsync(true);
 
-				ArchiveEntries = new ObservableCollection<ArchiveEntryViewModel>(archiveEntries
+				ArchiveEntries = new FilteredObservableCollection<ArchiveEntryViewModel>(archiveEntries
 					.Select(item => new ArchiveEntryViewModel(
 						_errorService,
 						item,
 						_navigationService,
+						_diskSearcher,
 						_messenger)));
 			}
 			catch (Exception ex)
@@ -270,7 +321,7 @@ namespace Archive.ClientBase.ViewModel
 		#region IDisposable Support
 
 		private bool disposedValue = false; // To detect redundant calls
-
+		
 		protected virtual void Dispose(bool disposing)
 		{
 			if (!disposedValue)

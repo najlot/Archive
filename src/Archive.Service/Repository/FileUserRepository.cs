@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Archive.Service.Configuration;
 using Archive.Service.Model;
+using System.Linq;
 
 namespace Archive.Service.Repository
 {
@@ -37,6 +38,15 @@ namespace Archive.Service.Repository
 			var item = JsonConvert.DeserializeObject<UserModel>(text);
 
 			return item;
+		}
+
+		public UserModel Get(string username)
+		{
+			return Directory.GetFiles(_storagePath)
+				.Select(path => File.ReadAllBytes(path))
+				.Select(bytes => Encoding.UTF8.GetString(bytes))
+				.Select(text => JsonConvert.DeserializeObject<UserModel>(text))
+				.FirstOrDefault(u => u.IsActive && u.Username == username);
 		}
 
 		public void Insert(UserModel model)

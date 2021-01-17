@@ -37,6 +37,18 @@ namespace Archive.Service.Repository
 			return e;
 		}
 
+		public UserModel Get(string username)
+		{
+			var e = _context.Users.FirstOrDefault(i => i.IsActive && i.Username == username);
+
+			if (e == null)
+			{
+				return null;
+			}
+
+			return e;
+		}
+
 		public void Insert(UserModel model)
 		{
 

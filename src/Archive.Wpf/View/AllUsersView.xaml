@@ -35,34 +35,32 @@
 		</WrapPanel>
 
 		<ScrollViewer>
-			<ItemsControl ItemsSource="{Binding Users}">
-				<ItemsControl.ItemsPanel>
-					<ItemsPanelTemplate>
-						<StackPanel />
-					</ItemsPanelTemplate>
-				</ItemsControl.ItemsPanel>
+			<StackPanel>
+				<Border Margin="5,0" BorderThickness="0.5" BorderBrush="{StaticResource BackgroundColor}" />
 
-				<ItemsControl.ItemTemplate>
-					<DataTemplate>
-						<StackPanel Margin="5">
-							<TextBlock Text="{Binding Item.Username}" Padding="5,5,5,0">
-								<i:Interaction.Triggers>
-									<i:EventTrigger EventName="MouseLeftButtonUp">
-										<i:InvokeCommandAction Command="{Binding EditUserCommand}" />
-									</i:EventTrigger>
-								</i:Interaction.Triggers>
-							</TextBlock>
-							<TextBlock Text="{Binding Item.EMail}" Padding="5,5,5,0">
-								<i:Interaction.Triggers>
-									<i:EventTrigger EventName="MouseLeftButtonUp">
-										<i:InvokeCommandAction Command="{Binding EditUserCommand}" />
-									</i:EventTrigger>
-								</i:Interaction.Triggers>
-							</TextBlock>
-						</StackPanel>
-					</DataTemplate>
-				</ItemsControl.ItemTemplate>
-			</ItemsControl>
+				<ItemsControl ItemsSource="{Binding Users}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<StackPanel />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<StackPanel Margin="5">
+								<TextBlock Text="{Binding Item.Username}" Padding="5,0">
+									<i:Interaction.Triggers>
+										<i:EventTrigger EventName="MouseLeftButtonUp">
+											<i:InvokeCommandAction Command="{Binding EditUserCommand}" />
+										</i:EventTrigger>
+									</i:Interaction.Triggers>
+								</TextBlock>
+								<Border Margin="0,5,0,0" BorderThickness="0.5" BorderBrush="{StaticResource BackgroundColor}" />
+							</StackPanel>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</StackPanel>
 		</ScrollViewer>
 	</DockPanel>
 </UserControl>

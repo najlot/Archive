@@ -4,18 +4,20 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Archive.Service.Configuration;
+using System.Security.Cryptography;
+using System.Linq;
 
 namespace Archive.Service.Services
 {
 	public class TokenService
 	{
-		// private readonly UserService _userService;
+		private readonly UserService _userService;
 		private readonly ServiceConfiguration _serviceConfiguration;
 
-		public TokenService(// UserService userService,
+		public TokenService(UserService userService,
 			ServiceConfiguration serviceConfiguration)
 		{
-			// _userService = userService;
+			_userService = userService;
 			_serviceConfiguration = serviceConfiguration;
 		}
 
@@ -45,13 +47,23 @@ namespace Archive.Service.Services
 
 		public string GetToken(string username, string password)
 		{
-			/*
-			// TODO: Implement
-			if (!_userService.CheckUser(username, password))
+			var user = _userService.GetUserModelFromName(username);
+
+			if (user == null)
 			{
 				return null;
 			}
-			*/
+
+			using (var sha = SHA256.Create())
+			{
+				var bytes = Encoding.UTF8.GetBytes(password);
+				var userUasswordHash = sha.ComputeHash(bytes);
+
+				if (!Enumerable.SequenceEqual(user.PasswordHash, userUasswordHash))
+				{
+					return null;
+				}
+			}
 
 			var claim = new[]
 			{

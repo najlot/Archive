@@ -4,18 +4,21 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Archive.ClientBase.Models;
 using Archive.Contracts;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
 
 namespace Archive.ClientBase.Services
 {
 	public class ArchiveEntryService : IDisposable
 	{
-		private IDataStore<ArchiveEntryModel> _store;
+		private IArchiveDataStore<ArchiveEntryModel> _store;
 		private readonly Messenger _messenger;
 		private readonly IDispatcherHelper _dispatcher;
 		private readonly ISubscriber _subscriber;
 
 		public ArchiveEntryService(
-			IDataStore<ArchiveEntryModel> dataStore,
+			IArchiveDataStore<ArchiveEntryModel> dataStore,
 			Messenger messenger,
 			IDispatcherHelper dispatcher,
 			ISubscriber subscriber)
@@ -52,12 +55,35 @@ namespace Archive.ClientBase.Services
 				Id = Guid.NewGuid(),
 				Description = "",
 				OriginalName = "",
-				FileSize = "",
+				FileSize = "0 B",
+				Date = DateTime.Now
 			};
 		}
 
-		public async Task<bool> AddItemAsync(ArchiveEntryModel item)
+		public async Task<bool> AddItemAsync(ArchiveEntryModel item, string path)
 		{
+			var size = await _store.AddFromPathAsync(item.Id, path);
+
+			var sizeList = new List<(int MinSize, string Suffix)>
+			{
+				(0, "B"),
+				(1024, "KB"),
+				(1024 * 1024, "MB"),
+				(1024 * 1024 * 1024, "GB")
+			};
+
+			sizeList = sizeList.Where(e => e.MinSize < size).ToList();
+			var minSize = sizeList.Max(e => e.MinSize);
+			var entry = sizeList.First(e => e.MinSize == minSize);
+
+			if (entry.MinSize != 0)
+			{
+				size = size / entry.MinSize;
+			}
+
+			item.FileSize = size + " " + entry.Suffix;
+
+
 			return await _store.AddItemAsync(item);
 		}
 
@@ -79,6 +105,69 @@ namespace Archive.ClientBase.Services
 		public async Task<bool> UpdateItemAsync(ArchiveEntryModel item)
 		{
 			return await _store.UpdateItemAsync(item);
+		}
+
+		public async Task ExportEntryAsync(Guid id, bool isFolder, string destinationPath)
+		{
+			var bytes = await _store.GetBytesFromIdAsync(id);
+
+			await Task.Run(() =>
+			{
+				var tempPath = Path.GetTempFileName();
+				File.WriteAllBytes(tempPath, bytes);
+
+				if (isFolder)
+				{
+					var decompressedTempPath = Path.GetTempFileName();
+
+					using (var input = File.OpenRead(tempPath))
+					{
+						using (var output = File.OpenWrite(decompressedTempPath))
+						{
+							using (var dstream = new DeflateStream(input, CompressionMode.Decompress))
+							{
+								dstream.CopyTo(output);
+							}
+						}
+					}
+
+					using (var input = File.OpenRead(decompressedTempPath))
+					{
+						using (var za = new ZipArchive(input))
+						{
+							var destFolder = destinationPath;
+
+							long folderNr = 0;
+
+							while (Directory.Exists(destFolder))
+							{
+								destFolder = destinationPath + " " + ++folderNr;
+							}
+
+							Directory.CreateDirectory(destFolder);
+
+							za.ExtractToDirectory(destFolder);
+						}
+					}
+
+					File.Delete(decompressedTempPath);
+				}
+				else
+				{
+					using (var input = File.OpenRead(tempPath))
+					{
+						using (var output = File.OpenWrite(destinationPath))
+						{
+							using (var dstream = new DeflateStream(input, CompressionMode.Decompress))
+							{
+								dstream.CopyTo(output);
+							}
+						}
+					}
+				}
+
+				File.Delete(tempPath);
+			});
 		}
 
 		#region IDisposable Support

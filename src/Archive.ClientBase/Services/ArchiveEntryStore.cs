@@ -6,10 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Archive.ClientBase.Models;
 using Archive.Contracts;
+using System.IO;
+using System.Buffers.Text;
+using System.IO.Compression;
 
 namespace Archive.ClientBase.Services
 {
-	public class ArchiveEntryStore : IDataStore<ArchiveEntryModel>
+	public partial class ArchiveEntryStore : IArchiveDataStore<ArchiveEntryModel>
 	{
 		private readonly IRequestClient _client;
 		private readonly TokenProvider _tokenProvider;
@@ -90,6 +93,106 @@ namespace Archive.ClientBase.Services
 			response.EnsureSuccessStatusCode();
 
 			return true;
+		}
+
+		private static void FolderToArchive(ZipArchive archive, string dirPath, int dirLen)
+		{
+			var paths = Directory.GetFiles(dirPath);
+			var dirs = Directory.GetDirectories(dirPath);
+
+			foreach (var dir in dirs)
+			{
+				FolderToArchive(archive, dir, dirLen);
+			}
+
+			foreach (var path in paths)
+			{
+				var newName = path.Substring(dirLen);
+
+				var zipArchiveEntry = archive.CreateEntry(newName, CompressionLevel.NoCompression);
+
+				using (var entryStream = zipArchiveEntry.Open())
+				{
+					using (var memstr = new MemoryStream(File.ReadAllBytes(path)))
+					{
+						memstr.CopyTo(entryStream);
+					}
+				}
+			}
+		}
+
+		public async Task<long> AddFromPathAsync(Guid id, string path)
+		{
+			var idStr = id.ToString();
+			var token = await _tokenProvider.GetToken();
+
+			var headers = new Dictionary<string, string>
+			{
+				{ "Authorization", $"Bearer {token}" }
+			};
+
+			if (Directory.Exists(path))
+			{
+				var newPath = Path.Combine(Path.GetTempPath(), idStr);
+				Directory.CreateDirectory(newPath);
+				newPath = Path.Combine(newPath, Path.GetFileName(path));
+
+				using (var stream = File.OpenWrite(newPath))
+				{
+					using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, true))
+					{
+						var dirLen = path.Length + 1;
+						FolderToArchive(archive, path, dirLen);
+					}
+				}
+
+				path = newPath;
+			}
+
+			if (File.Exists(path))
+			{
+				var str = await Task.Run(() =>
+				{
+					var tempPath = Path.GetTempFileName();
+					
+					using (var output = File.OpenWrite(tempPath))
+					{
+						using (var dstream = new DeflateStream(output, CompressionLevel.Optimal))
+						{
+							var originalBytes = File.ReadAllBytes(path);
+							dstream.Write(originalBytes, 0, originalBytes.Length);
+						}
+					}
+
+					var compressedBytes = File.ReadAllBytes(tempPath);
+
+					File.Delete(tempPath);
+
+					return (Base64: Convert.ToBase64String(compressedBytes), Length: compressedBytes.Length);
+				});
+
+				var commandString = JsonConvert.SerializeObject(new AddBase64File(id, str.Base64));
+				var response = await _client.PostAsync($"api/ArchiveEntry/AddBase64File", commandString, "application/json", headers);
+				response.EnsureSuccessStatusCode();
+				return str.Length;
+			}
+
+			return 0;
+		}
+
+		public async Task<byte[]> GetBytesFromIdAsync(Guid id)
+		{
+			var token = await _tokenProvider.GetToken();
+
+			var headers = new Dictionary<string, string>
+			{
+				{ "Authorization", $"Bearer {token}" }
+			};
+
+			var response = await _client.GetAsync($"api/ArchiveEntry/GetFile/" + id.ToString(), headers);
+			response.EnsureSuccessStatusCode();
+
+			return response.Body.ToArray();
 		}
 
 		public async Task<bool> UpdateItemAsync(ArchiveEntryModel item)
