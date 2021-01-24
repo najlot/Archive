@@ -6,8 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Archive.ClientBase.Models;
 using Archive.Contracts;
-using System.IO;
-using System.Buffers.Text;
 using System.IO.Compression;
 
 namespace Archive.ClientBase.Services
@@ -162,9 +160,8 @@ namespace Archive.ClientBase.Services
 					return (Base64: Convert.ToBase64String(compressedBytes), Length: compressedBytes.Length);
 				});
 
-				var commandString = JsonConvert.SerializeObject(new AddBase64File(id, str.Base64));
-				var response = await _client.PostAsync($"api/ArchiveEntry/AddBase64File", commandString, "application/json", headers);
-				response.EnsureSuccessStatusCode();
+				var request = new AddBase64File(id, str.Base64);
+				await _client.PostAsync($"api/ArchiveEntry/AddBase64File", request, headers);
 				return str.Length;
 			}
 
