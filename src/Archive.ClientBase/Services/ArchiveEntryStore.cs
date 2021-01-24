@@ -1,8 +1,8 @@
 ﻿using Cosei.Client.RabbitMq;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Archive.ClientBase.Models;
 using Archive.Contracts;
@@ -33,11 +33,7 @@ namespace Archive.ClientBase.Services
 					{ "Authorization", $"Bearer {token}" }
 				};
 
-				var response = await _client.GetAsync("api/ArchiveEntry", headers);
-				response = response.EnsureSuccessStatusCode();
-				var responseString = Encoding.UTF8.GetString(response.Body.ToArray());
-
-				items = JsonConvert.DeserializeObject<List<ArchiveEntryModel>>(responseString);
+				items = await _client.GetAsync<List<ArchiveEntryModel>>("api/ArchiveEntry", headers);
 			}
 
 			return items;
@@ -54,11 +50,7 @@ namespace Archive.ClientBase.Services
 					{ "Authorization", $"Bearer {token}" }
 				};
 
-				var response = await _client.GetAsync($"api/ArchiveEntry/{id}", headers);
-				response = response.EnsureSuccessStatusCode();
-				var responseString = Encoding.UTF8.GetString(response.Body.ToArray());
-
-				return JsonConvert.DeserializeObject<ArchiveEntryModel>(responseString);
+				return await _client.GetAsync<ArchiveEntryModel>($"api/ArchiveEntry/{id}", headers);
 			}
 
 			return null;
@@ -86,8 +78,7 @@ namespace Archive.ClientBase.Services
 				item.IsFolder,
 				item.FileSize);
 
-			var response = await _client.PostAsync($"api/ArchiveEntry", JsonConvert.SerializeObject(request), "application/json", headers);
-			response.EnsureSuccessStatusCode();
+			await _client.PostAsync($"api/ArchiveEntry", request, headers);
 
 			return true;
 		}
@@ -114,8 +105,7 @@ namespace Archive.ClientBase.Services
 				item.IsFolder,
 				item.FileSize);
 
-			var response = await _client.PutAsync($"api/ArchiveEntry", JsonConvert.SerializeObject(request), "application/json", headers);
-			response.EnsureSuccessStatusCode();
+			await _client.PutAsync($"api/ArchiveEntry", request, headers);
 
 			return true;
 		}
