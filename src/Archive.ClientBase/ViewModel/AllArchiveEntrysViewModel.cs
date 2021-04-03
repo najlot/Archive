@@ -75,7 +75,7 @@ namespace Archive.ClientBase.ViewModel
 
 			var item = arg.Item;
 
-			if (!string.IsNullOrEmpty(item.Date) && item.Date.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			if (item.Date.ToString("dd.MM.yyyy HH:mm:ss").IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
 			{
 				return true;
 			}
@@ -86,11 +86,6 @@ namespace Archive.ClientBase.ViewModel
 			}
 
 			if (!string.IsNullOrEmpty(item.OriginalName) && item.OriginalName.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
-			{
-				return true;
-			}
-
-			if (!string.IsNullOrEmpty(item.IsFolder) && item.IsFolder.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
 			{
 				return true;
 			}
@@ -135,12 +130,12 @@ namespace Archive.ClientBase.ViewModel
 
 		private void Handle(ArchiveEntryUpdated obj)
 		{
-			var oldItem = ArchiveEntries.Items.FirstOrDefault(i => i.Item.Id == obj.Id);
+			var oldItem = ArchiveEntries.FirstOrDefault(i => i.Item.Id == obj.Id);
 			var index = -1;
 
 			if (oldItem != null)
 			{
-				index = ArchiveEntries.Items.IndexOf(oldItem);
+				index = ArchiveEntries.IndexOf(oldItem);
 
 				if (index != -1)
 				{
@@ -173,7 +168,7 @@ namespace Archive.ClientBase.ViewModel
 
 		private void Handle(ArchiveEntryDeleted obj)
 		{
-			var oldItem = ArchiveEntries.Items.FirstOrDefault(i => i.Item.Id == obj.Id);
+			var oldItem = ArchiveEntries.FirstOrDefault(i => i.Item.Id == obj.Id);
 
 			if (oldItem != null)
 			{
@@ -239,7 +234,7 @@ namespace Archive.ClientBase.ViewModel
 		{
 			try
 			{
-				if (ArchiveEntries.Items.Any(i => i.Item.Id == obj.Item.Id))
+				if (ArchiveEntries.Any(i => i.Item.Id == obj.Item.Id))
 				{
 					await _archiveEntryService.UpdateItemAsync(obj.Item);
 				}
