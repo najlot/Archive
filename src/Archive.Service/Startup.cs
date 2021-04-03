@@ -1,4 +1,6 @@
-﻿using Cosei.Service.RabbitMq;
+﻿using Cosei.Service.Base;
+using Cosei.Service.Http;
+using Cosei.Service.RabbitMq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -102,7 +104,7 @@ namespace Archive.Service
 				services.AddCoseiRabbitMq(rmqConfig);
 			}
 
-			services.AddCosei();
+			services.AddCoseiHttp();
 
 			services.AddScoped<ArchiveEntryService>();
 			services.AddScoped<UserService>();

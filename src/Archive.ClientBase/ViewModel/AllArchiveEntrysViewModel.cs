@@ -18,8 +18,7 @@ namespace Archive.ClientBase.ViewModel
 		private readonly ErrorService _errorService;
 
 		private bool _isBusy;
-		private string _filter = "";
-		private FilteredObservableCollection<ArchiveEntryViewModel> _archiveEntries = new FilteredObservableCollection<ArchiveEntryViewModel>();
+		private string _filter;
 
 		public bool IsBusy
 		{
@@ -32,42 +31,13 @@ namespace Archive.ClientBase.ViewModel
 			get => _filter;
 			set
 			{
-				_filter = value;
-				ArchiveEntries.Refresh();
+				Set(nameof(Filter), ref _filter, value);
+				ArchiveEntriesView.Refresh();
 			}
 		}
 
-		public FilteredObservableCollection<ArchiveEntryViewModel> ArchiveEntries
-		{
-			get => _archiveEntries;
-			private set
-			{
-				value.Filter = FilterArchiveEntry;
-				Set(nameof(ArchiveEntries), ref _archiveEntries, value);
-			}
-		}
-
-		private bool FilterArchiveEntry(ArchiveEntryViewModel item)
-		{
-			if (string.IsNullOrEmpty(Filter))
-			{
-				return true;
-			}
-
-			if (!string.IsNullOrEmpty(item.Item.OriginalName)
-				&& item.Item.OriginalName.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
-			{
-				return true;
-			}
-
-			if (!string.IsNullOrEmpty(item.Item.Description)
-				&& item.Item.Description.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
-			{
-				return true;
-			}
-
-			return false;
-		}
+		public ObservableCollectionView<ArchiveEntryViewModel> ArchiveEntriesView { get; }
+		public ObservableCollection<ArchiveEntryViewModel> ArchiveEntries { get; } = new ObservableCollection<ArchiveEntryViewModel>();
 
 		public AllArchiveEntriesViewModel(ErrorService errorService,
 			ArchiveEntryService archiveEntryService,
@@ -81,6 +51,8 @@ namespace Archive.ClientBase.ViewModel
 			_diskSearcher = diskSearcher;
 			_messenger = messenger;
 
+			ArchiveEntriesView = new ObservableCollectionView<ArchiveEntryViewModel>(ArchiveEntries, FilterArchiveEntry);
+
 			_messenger.Register<ExportEntry>(Handle);
 			_messenger.Register<SaveArchiveEntry>(Handle);
 			_messenger.Register<EditArchiveEntry>(Handle);
@@ -92,6 +64,43 @@ namespace Archive.ClientBase.ViewModel
 
 			AddArchiveEntryCommand = new AsyncCommand(AddArchiveEntryAsync, DisplayError);
 			RefreshArchiveEntriesCommand = new AsyncCommand(RefreshArchiveEntriesAsync, DisplayError);
+		}
+
+		private bool FilterArchiveEntry(ArchiveEntryViewModel arg)
+		{
+			if (string.IsNullOrEmpty(Filter))
+			{
+				return true;
+			}
+
+			var item = arg.Item;
+
+			if (!string.IsNullOrEmpty(item.Date) && item.Date.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			{
+				return true;
+			}
+
+			if (!string.IsNullOrEmpty(item.Description) && item.Description.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			{
+				return true;
+			}
+
+			if (!string.IsNullOrEmpty(item.OriginalName) && item.OriginalName.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			{
+				return true;
+			}
+
+			if (!string.IsNullOrEmpty(item.IsFolder) && item.IsFolder.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			{
+				return true;
+			}
+
+			if (!string.IsNullOrEmpty(item.FileSize) && item.FileSize.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			{
+				return true;
+			}
+
+			return false;
 		}
 
 		private async Task DisplayError(Task task)
@@ -296,17 +305,24 @@ namespace Archive.ClientBase.ViewModel
 			try
 			{
 				IsBusy = true;
+				ArchiveEntriesView.Disable();
+				Filter = "";
+
 				ArchiveEntries.Clear();
 
 				var archiveEntries = await _archiveEntryService.GetItemsAsync(true);
 
-				ArchiveEntries = new FilteredObservableCollection<ArchiveEntryViewModel>(archiveEntries
-					.Select(item => new ArchiveEntryViewModel(
+				foreach (var item in archiveEntries)
+				{
+					var vm = new ArchiveEntryViewModel(
 						_errorService,
 						item,
 						_navigationService,
 						_diskSearcher,
-						_messenger)));
+						_messenger);
+
+					ArchiveEntries.Add(vm);
+				}
 			}
 			catch (Exception ex)
 			{
@@ -314,6 +330,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			finally
 			{
+				ArchiveEntriesView.Enable();
 				IsBusy = false;
 			}
 		}
