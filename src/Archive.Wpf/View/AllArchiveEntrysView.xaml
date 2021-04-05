@@ -36,8 +36,8 @@
 			</WrapPanel>
 			
 			<DockPanel DockPanel.Dock="Top">
-				<Label Content="Filter:" />
-				<TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Margin="5" />
+				<Label Content="Filter:" VerticalAlignment="Center" />
+				<TextBox Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" Margin="5" VerticalAlignment="Center" />
 			</DockPanel>
 		</DockPanel>
 
