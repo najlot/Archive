@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 using Archive.ClientBase.Models;
 using Archive.Contracts;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public class UserStore : IDataStore<UserModel>
+	public class UserStore : IUserStore
 	{
 		private readonly IRequestClient _client;
-		private readonly TokenProvider _tokenProvider;
+		private readonly ITokenProvider _tokenProvider;
 		private IEnumerable<UserModel> items;
 
-		public UserStore(IRequestClient client, TokenProvider tokenProvider)
+		public UserStore(IRequestClient client, ITokenProvider tokenProvider)
 		{
 			_tokenProvider = tokenProvider;
 			_client = client;

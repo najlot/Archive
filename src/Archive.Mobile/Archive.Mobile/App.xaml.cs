@@ -3,6 +3,7 @@ using System;
 using Archive.ClientBase;
 using Archive.ClientBase.ProfileHandler;
 using Archive.ClientBase.Services;
+using Archive.ClientBase.Services.Implementation;
 using Archive.ClientBase.ViewModel;
 using Archive.Mobile.View;
 using Xamarin.Forms;
@@ -31,9 +32,9 @@ namespace Archive.Mobile
 				serviceCollection.AddSingleton<IDispatcherHelper, DispatcherHelper>();
 
 				// Register services
-				serviceCollection.AddSingleton(errorService);
-				serviceCollection.AddSingleton<ProfilesService>();
-				serviceCollection.AddSingleton(messenger);
+				serviceCollection.AddSingleton<IErrorService>(errorService);
+				serviceCollection.AddSingleton<IProfilesService, ProfilesService>();
+				serviceCollection.AddSingleton<IMessenger>(messenger);
 
 				var profileHandler = new LocalProfileHandler(messenger, dispatcher);
 				profileHandler

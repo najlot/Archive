@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Archive.ClientBase
 {
-	public class Messenger
+	public class Messenger : IMessenger
 	{
 		private struct TargetAndMethodInfo
 		{

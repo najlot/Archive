@@ -6,9 +6,9 @@ using System.IO;
 using System.Linq;
 using Archive.ClientBase.Models;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public class ProfilesService
+	public class ProfilesService : IProfilesService
 	{
 		public class KnownTypesBinder : ISerializationBinder
 		{

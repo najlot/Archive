@@ -5,18 +5,18 @@ using System.Threading.Tasks;
 using Archive.ClientBase.Models;
 using Archive.Contracts;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public class UserService : IDisposable
+	public class ArchiveEntryService : IArchiveEntryService
 	{
-		private IDataStore<UserModel> _store;
-		private readonly Messenger _messenger;
+		private IArchiveEntryStore _store;
+		private readonly IMessenger _messenger;
 		private readonly IDispatcherHelper _dispatcher;
 		private readonly ISubscriber _subscriber;
 
-		public UserService(
-			IDataStore<UserModel> dataStore,
-			Messenger messenger,
+		public ArchiveEntryService(
+			IArchiveEntryStore dataStore,
+			IMessenger messenger,
 			IDispatcherHelper dispatcher,
 			ISubscriber subscriber)
 		{
@@ -25,38 +25,38 @@ namespace Archive.ClientBase.Services
 			_dispatcher = dispatcher;
 			_subscriber = subscriber;
 
-			subscriber.Register<UserCreated>(Handle);
-			subscriber.Register<UserUpdated>(Handle);
-			subscriber.Register<UserDeleted>(Handle);
+			subscriber.Register<ArchiveEntryCreated>(Handle);
+			subscriber.Register<ArchiveEntryUpdated>(Handle);
+			subscriber.Register<ArchiveEntryDeleted>(Handle);
 		}
 
-		private async Task Handle(UserCreated message)
+		private async Task Handle(ArchiveEntryCreated message)
 		{
 			await _dispatcher.BeginInvokeOnMainThread(async () => await _messenger.SendAsync(message));
 		}
 
-		private async Task Handle(UserUpdated message)
+		private async Task Handle(ArchiveEntryUpdated message)
 		{
 			await _dispatcher.BeginInvokeOnMainThread(async () => await _messenger.SendAsync(message));
 		}
 
-		private async Task Handle(UserDeleted message)
+		private async Task Handle(ArchiveEntryDeleted message)
 		{
 			await _dispatcher.BeginInvokeOnMainThread(async () => await _messenger.SendAsync(message));
 		}
 
-		public UserModel CreateUser()
+		public ArchiveEntryModel CreateArchiveEntry()
 		{
-			return new UserModel()
+			return new ArchiveEntryModel()
 			{
 				Id = Guid.NewGuid(),
-				Username = "",
-				EMail = "",
-				Password = "",
+				Description = "",
+				OriginalName = "",
+				FileSize = "",
 			};
 		}
 
-		public async Task<bool> AddItemAsync(UserModel item)
+		public async Task<bool> AddItemAsync(ArchiveEntryModel item)
 		{
 			return await _store.AddItemAsync(item);
 		}
@@ -66,17 +66,17 @@ namespace Archive.ClientBase.Services
 			return await _store.DeleteItemAsync(id);
 		}
 
-		public async Task<UserModel> GetItemAsync(Guid id)
+		public async Task<ArchiveEntryModel> GetItemAsync(Guid id)
 		{
 			return await _store.GetItemAsync(id);
 		}
 
-		public async Task<IEnumerable<UserModel>> GetItemsAsync(bool forceRefresh = false)
+		public async Task<IEnumerable<ArchiveEntryModel>> GetItemsAsync(bool forceRefresh = false)
 		{
 			return await _store.GetItemsAsync(forceRefresh);
 		}
 
-		public async Task<bool> UpdateItemAsync(UserModel item)
+		public async Task<bool> UpdateItemAsync(ArchiveEntryModel item)
 		{
 			return await _store.UpdateItemAsync(item);
 		}

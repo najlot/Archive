@@ -8,55 +8,52 @@ using Archive.ClientBase.Models;
 using Archive.ClientBase.ProfileHandler;
 using Archive.Contracts;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public sealed class LocalArchiveEntryStore : IDataStore<ArchiveEntryModel>
+	public sealed class LocalUserStore : IUserStore
 	{
 		private readonly string _dataPath;
-		private readonly LocalSubscriber _subscriber;
-		private List<ArchiveEntryModel> _items = null;
+		private readonly ILocalSubscriber _subscriber;
+		private List<UserModel> _items = null;
 
-		public LocalArchiveEntryStore(string folderName, LocalSubscriber localSubscriber)
+		public LocalUserStore(string folderName, ILocalSubscriber localSubscriber)
 		{
 			var appdataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Archive");
 			appdataDir = Path.Combine(appdataDir, folderName);
 			Directory.CreateDirectory(appdataDir);
 
-			_dataPath = Path.Combine(appdataDir, "ArchiveEntries.json");
+			_dataPath = Path.Combine(appdataDir, "Users.json");
 			_items = GetItems();
 			_subscriber = localSubscriber;
 		}
 
-		private List<ArchiveEntryModel> GetItems()
+		private List<UserModel> GetItems()
 		{
-			List<ArchiveEntryModel> items;
+			List<UserModel> items;
 			if (File.Exists(_dataPath))
 			{
 				var data = File.ReadAllText(_dataPath);
-				items = JsonSerializer.Deserialize<List<ArchiveEntryModel>>(data, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+				items = JsonSerializer.Deserialize<List<UserModel>>(data, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
 			}
 			else
 			{
-				items = new List<ArchiveEntryModel>();
+				items = new List<UserModel>();
 			}
 
 			return items;
 		}
 
-		public async Task<bool> AddItemAsync(ArchiveEntryModel item)
+		public async Task<bool> AddItemAsync(UserModel item)
 		{
 			_items.Insert(0, item);
 
 			SaveItems();
 
-			await _subscriber.SendAsync(new ArchiveEntryCreated(
+			await _subscriber.SendAsync(new UserCreated(
 				item.Id,
-				item.Date,
-				item.Description,
-				item.Groups,
-				item.OriginalName,
-				item.IsFolder,
-				item.FileSize));
+				item.Username,
+				item.EMail,
+				item.Password));
 
 			return await Task.FromResult(true);
 		}
@@ -67,7 +64,7 @@ namespace Archive.ClientBase.Services
 			File.WriteAllText(_dataPath, text);
 		}
 
-		public async Task<bool> UpdateItemAsync(ArchiveEntryModel item)
+		public async Task<bool> UpdateItemAsync(UserModel item)
 		{
 			int index = 0;
 			var oldItem = _items.FirstOrDefault(i => i.Id == item.Id);
@@ -90,14 +87,11 @@ namespace Archive.ClientBase.Services
 
 			SaveItems();
 
-			await _subscriber.SendAsync(new ArchiveEntryUpdated(
+			await _subscriber.SendAsync(new UserUpdated(
 				item.Id,
-				item.Date,
-				item.Description,
-				item.Groups,
-				item.OriginalName,
-				item.IsFolder,
-				item.FileSize));
+				item.Username,
+				item.EMail,
+				item.Password));
 
 			return await Task.FromResult(true);
 		}
@@ -109,17 +103,17 @@ namespace Archive.ClientBase.Services
 
 			SaveItems();
 
-			await _subscriber.SendAsync(new ArchiveEntryDeleted(id));
+			await _subscriber.SendAsync(new UserDeleted(id));
 
 			return await Task.FromResult(true);
 		}
 
-		public async Task<ArchiveEntryModel> GetItemAsync(Guid id)
+		public async Task<UserModel> GetItemAsync(Guid id)
 		{
 			return await Task.FromResult(_items.FirstOrDefault(s => s.Id == id));
 		}
 
-		public async Task<IEnumerable<ArchiveEntryModel>> GetItemsAsync(bool forceRefresh = false)
+		public async Task<IEnumerable<UserModel>> GetItemsAsync(bool forceRefresh = false)
 		{
 			_items = GetItems();
 
