@@ -18,10 +18,10 @@ namespace Archive.ClientBase.ViewModel
 		private ArchiveEntryModel _item;
 		private string _path;
 		private string _groupToAdd;
-		private readonly ErrorService _errorService;
+		private readonly IErrorService _errorService;
 		private readonly INavigationService _navigationService;
 		private readonly IDiskSearcher _diskSearcher;
-		private readonly Messenger _messenger;
+		private readonly IMessenger _messenger;
 
 		public ArchiveEntryModel Item { get => _item; private set => Set(nameof(Item), ref _item, value); }
 		public bool IsBusy { get => _isBusy; private set => Set(nameof(IsBusy), ref _isBusy, value); }
@@ -36,11 +36,11 @@ namespace Archive.ClientBase.ViewModel
 		public string GroupToAdd { get => _groupToAdd; set => Set(nameof(GroupToAdd), ref _groupToAdd, value); }
 
 		public ArchiveEntryViewModel(
-			ErrorService errorService,
+			IErrorService errorService,
 			ArchiveEntryModel archiveEntryModel,
 			INavigationService navigationService,
 			IDiskSearcher diskSearcher,
-			Messenger messenger)
+			IMessenger messenger)
 		{
 			Item = archiveEntryModel;
 			_errorService = errorService;
@@ -83,7 +83,7 @@ namespace Archive.ClientBase.ViewModel
 
 		private async Task DisplayError(Task task)
 		{
-			await _errorService.ShowAlert("Error...", task.Exception);
+			await _errorService.ShowAlertAsync("Error...", task.Exception);
 		}
 
 		public bool _canExport = true;
@@ -258,7 +258,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error saving...", ex);
+				await _errorService.ShowAlertAsync("Error saving...", ex);
 			}
 			finally
 			{
@@ -294,7 +294,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error deleting...", ex);
+				await _errorService.ShowAlertAsync("Error deleting...", ex);
 			}
 			finally
 			{
@@ -317,7 +317,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error starting edit...", ex);
+				await _errorService.ShowAlertAsync("Error starting edit...", ex);
 			}
 			finally
 			{

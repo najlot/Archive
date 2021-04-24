@@ -6,8 +6,8 @@ namespace Archive.ClientBase.ProfileHandler
 {
 	public interface IProfileHandler
 	{
-		ArchiveEntryService GetArchiveEntryService();
-		UserService GetUserService();
+		IArchiveEntryService GetArchiveEntryService();
+		IUserService GetUserService();
 
 		IProfileHandler SetNext(IProfileHandler handler);
 

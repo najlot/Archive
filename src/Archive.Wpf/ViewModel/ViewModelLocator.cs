@@ -3,6 +3,7 @@ using System;
 using Archive.ClientBase;
 using Archive.ClientBase.ProfileHandler;
 using Archive.ClientBase.Services;
+using Archive.ClientBase.Services.Implementation;
 using Archive.ClientBase.ViewModel;
 
 namespace Archive.Wpf.ViewModel
@@ -24,9 +25,9 @@ namespace Archive.Wpf.ViewModel
 			serviceCollection.AddSingleton<IDiskSearcher, DiskSearcher>();
 
 			// Register services
-			serviceCollection.AddSingleton<ErrorService>();
-			serviceCollection.AddSingleton<ProfilesService>();
-			serviceCollection.AddSingleton(messenger);
+			serviceCollection.AddSingleton<IErrorService>(errorService);
+			serviceCollection.AddSingleton<IProfilesService, ProfilesService>();
+			serviceCollection.AddSingleton<IMessenger>(messenger);
 
 			var profileHandler = new LocalProfileHandler(messenger, dispatcher);
 			profileHandler

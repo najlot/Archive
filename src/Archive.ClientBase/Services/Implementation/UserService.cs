@@ -5,18 +5,18 @@ using System.Threading.Tasks;
 using Archive.ClientBase.Models;
 using Archive.Contracts;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public class UserService : IDisposable
+	public class UserService : IUserService
 	{
-		private IDataStore<UserModel> _store;
-		private readonly Messenger _messenger;
+		private IUserStore _store;
+		private readonly IMessenger _messenger;
 		private readonly IDispatcherHelper _dispatcher;
 		private readonly ISubscriber _subscriber;
 
 		public UserService(
-			IDataStore<UserModel> dataStore,
-			Messenger messenger,
+			IUserStore dataStore,
+			IMessenger messenger,
 			IDispatcherHelper dispatcher,
 			ISubscriber subscriber)
 		{

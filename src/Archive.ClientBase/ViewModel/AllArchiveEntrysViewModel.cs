@@ -11,11 +11,11 @@ namespace Archive.ClientBase.ViewModel
 {
 	public class AllArchiveEntriesViewModel : AbstractViewModel, IDisposable
 	{
-		private readonly ArchiveEntryService _archiveEntryService;
+		private readonly IArchiveEntryService _archiveEntryService;
 		private readonly INavigationService _navigationService;
 		private readonly IDiskSearcher _diskSearcher;
-		private readonly Messenger _messenger;
-		private readonly ErrorService _errorService;
+		private readonly IMessenger _messenger;
+		private readonly IErrorService _errorService;
 
 		private bool _isBusy;
 		private string _filter;
@@ -39,11 +39,11 @@ namespace Archive.ClientBase.ViewModel
 		public ObservableCollectionView<ArchiveEntryViewModel> ArchiveEntriesView { get; }
 		public ObservableCollection<ArchiveEntryViewModel> ArchiveEntries { get; } = new ObservableCollection<ArchiveEntryViewModel>();
 
-		public AllArchiveEntriesViewModel(ErrorService errorService,
-			ArchiveEntryService archiveEntryService,
+		public AllArchiveEntriesViewModel(IErrorService errorService,
+			IArchiveEntryService archiveEntryService,
 			INavigationService navigationService,
 			IDiskSearcher diskSearcher,
-			Messenger messenger)
+			IMessenger messenger)
 		{
 			_errorService = errorService;
 			_archiveEntryService = archiveEntryService;
@@ -80,12 +80,14 @@ namespace Archive.ClientBase.ViewModel
 				return true;
 			}
 
-			if (!string.IsNullOrEmpty(item.Description) && item.Description.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			var description = item.Description;
+			if (!string.IsNullOrEmpty(description) && description.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
 			{
 				return true;
 			}
 
-			if (!string.IsNullOrEmpty(item.OriginalName) && item.OriginalName.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
+			var originalName = item.OriginalName;
+			if (!string.IsNullOrEmpty(originalName) && originalName.IndexOf(Filter, StringComparison.OrdinalIgnoreCase) != -1)
 			{
 				return true;
 			}
@@ -100,7 +102,7 @@ namespace Archive.ClientBase.ViewModel
 
 		private async Task DisplayError(Task task)
 		{
-			await _errorService.ShowAlert("Error...", task.Exception);
+			await _errorService.ShowAlertAsync("Error...", task.Exception);
 		}
 
 		private async Task Handle(ExportEntry obj)
@@ -184,7 +186,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error saving...", ex);
+				await _errorService.ShowAlertAsync("Error saving...", ex);
 			}
 		}
 
@@ -222,7 +224,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error loading...", ex);
+				await _errorService.ShowAlertAsync("Error loading...", ex);
 			}
 			finally
 			{
@@ -245,7 +247,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error saving...", ex);
+				await _errorService.ShowAlertAsync("Error saving...", ex);
 			}
 		}
 
@@ -281,7 +283,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error adding...", ex);
+				await _errorService.ShowAlertAsync("Error adding...", ex);
 			}
 			finally
 			{
@@ -321,7 +323,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 			catch (Exception ex)
 			{
-				await _errorService.ShowAlert("Error loading data...", ex);
+				await _errorService.ShowAlertAsync("Error loading data...", ex);
 			}
 			finally
 			{

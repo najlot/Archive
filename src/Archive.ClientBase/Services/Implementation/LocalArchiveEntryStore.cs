@@ -9,16 +9,16 @@ using Archive.ClientBase.Models;
 using Archive.ClientBase.ProfileHandler;
 using Archive.Contracts;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public sealed class LocalArchiveEntryStore : IArchiveDataStore<ArchiveEntryModel>
+	public sealed class LocalArchiveEntryStore : IArchiveEntryStore
 	{
 		private readonly string _appdataDir;
 		private readonly string _dataPath;
-		private readonly LocalSubscriber _subscriber;
+		private readonly ILocalSubscriber _subscriber;
 		private List<ArchiveEntryModel> _items = null;
-		
-		public LocalArchiveEntryStore(string folderName, LocalSubscriber localSubscriber)
+
+		public LocalArchiveEntryStore(string folderName, ILocalSubscriber localSubscriber)
 		{
 			_appdataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Archive");
 			_appdataDir = Path.Combine(_appdataDir, folderName);

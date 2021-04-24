@@ -8,15 +8,15 @@ using Archive.ClientBase.Models;
 using Archive.ClientBase.ProfileHandler;
 using Archive.Contracts;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public sealed class LocalUserStore : IDataStore<UserModel>
+	public sealed class LocalUserStore : IUserStore
 	{
 		private readonly string _dataPath;
-		private readonly LocalSubscriber _subscriber;
+		private readonly ILocalSubscriber _subscriber;
 		private List<UserModel> _items = null;
 
-		public LocalUserStore(string folderName, LocalSubscriber localSubscriber)
+		public LocalUserStore(string folderName, ILocalSubscriber localSubscriber)
 		{
 			var appdataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Archive");
 			appdataDir = Path.Combine(appdataDir, folderName);

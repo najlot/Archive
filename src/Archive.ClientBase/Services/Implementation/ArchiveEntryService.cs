@@ -8,18 +8,18 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public class ArchiveEntryService : IDisposable
+	public class ArchiveEntryService : IArchiveEntryService
 	{
-		private IArchiveDataStore<ArchiveEntryModel> _store;
-		private readonly Messenger _messenger;
+		private IArchiveEntryStore _store;
+		private readonly IMessenger _messenger;
 		private readonly IDispatcherHelper _dispatcher;
 		private readonly ISubscriber _subscriber;
 
 		public ArchiveEntryService(
-			IArchiveDataStore<ArchiveEntryModel> dataStore,
-			Messenger messenger,
+			IArchiveEntryStore dataStore,
+			IMessenger messenger,
 			IDispatcherHelper dispatcher,
 			ISubscriber subscriber)
 		{

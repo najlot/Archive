@@ -8,15 +8,15 @@ using Archive.ClientBase.Models;
 using Archive.Contracts;
 using System.IO.Compression;
 
-namespace Archive.ClientBase.Services
+namespace Archive.ClientBase.Services.Implementation
 {
-	public partial class ArchiveEntryStore : IArchiveDataStore<ArchiveEntryModel>
+	public partial class ArchiveEntryStore : IArchiveEntryStore
 	{
 		private readonly IRequestClient _client;
-		private readonly TokenProvider _tokenProvider;
+		private readonly ITokenProvider _tokenProvider;
 		private IEnumerable<ArchiveEntryModel> items;
 
-		public ArchiveEntryStore(IRequestClient client, TokenProvider tokenProvider)
+		public ArchiveEntryStore(IRequestClient client, ITokenProvider tokenProvider)
 		{
 			_tokenProvider = tokenProvider;
 			_client = client;

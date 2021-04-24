@@ -1,6 +1,7 @@
 ﻿using Archive.ClientBase.Models;
 using Archive.ClientBase.Services;
 using System.Threading.Tasks;
+using Cosei.Client.Base;
 
 namespace Archive.ClientBase.ProfileHandler
 {
@@ -8,16 +9,24 @@ namespace Archive.ClientBase.ProfileHandler
 	{
 		private IProfileHandler _handler = null;
 
-		protected ArchiveEntryService ArchiveEntryService { get; set; }
-		protected UserService UserService { get; set; }
+		protected ISubscriber Subscriber { get; set; }
 
-		public ArchiveEntryService GetArchiveEntryService() => ArchiveEntryService ?? _handler?.GetArchiveEntryService();
-		public UserService GetUserService() => UserService ?? _handler?.GetUserService();
+		protected IArchiveEntryService ArchiveEntryService { get; set; }
+		protected IUserService UserService { get; set; }
+
+		public IArchiveEntryService GetArchiveEntryService() => ArchiveEntryService ?? _handler?.GetArchiveEntryService();
+		public IUserService GetUserService() => UserService ?? _handler?.GetUserService();
 
 		public IProfileHandler SetNext(IProfileHandler handler) => _handler = handler;
 
 		public async Task SetProfile(ProfileBase profile)
 		{
+			if (Subscriber != null)
+			{
+				await Subscriber.DisposeAsync();
+				Subscriber = null;
+			}
+
 			ArchiveEntryService?.Dispose();
 			ArchiveEntryService = null;
 			UserService?.Dispose();

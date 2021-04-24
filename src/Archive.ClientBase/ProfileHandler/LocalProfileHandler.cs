@@ -1,17 +1,15 @@
-﻿using Cosei.Client.RabbitMq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Archive.ClientBase.Models;
-using Archive.ClientBase.Services;
+using Archive.ClientBase.Services.Implementation;
 
 namespace Archive.ClientBase.ProfileHandler
 {
 	public sealed class LocalProfileHandler : AbstractProfileHandler
 	{
-		private readonly Messenger _messenger;
+		private readonly IMessenger _messenger;
 		private readonly IDispatcherHelper _dispatcher;
-		private LocalSubscriber _subscriber;
 
-		public LocalProfileHandler(Messenger messenger, IDispatcherHelper dispatcher)
+		public LocalProfileHandler(IMessenger messenger, IDispatcherHelper dispatcher)
 		{
 			_messenger = messenger;
 			_dispatcher = dispatcher;
@@ -19,12 +17,6 @@ namespace Archive.ClientBase.ProfileHandler
 
 		protected override async Task ApplyProfile(ProfileBase profile)
 		{
-			if (_subscriber != null)
-			{
-				await _subscriber.DisposeAsync();
-				_subscriber = null;
-			}
-
 			if (profile is LocalProfile localProfile)
 			{
 				var subscriber = new LocalSubscriber();
@@ -35,7 +27,7 @@ namespace Archive.ClientBase.ProfileHandler
 
 				await subscriber.StartAsync();
 
-				_subscriber = subscriber;
+				Subscriber = subscriber;
 			}
 		}
 	}
