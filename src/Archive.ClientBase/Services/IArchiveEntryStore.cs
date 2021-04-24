@@ -16,5 +16,8 @@ namespace Archive.ClientBase.Services
 		Task<ArchiveEntryModel> GetItemAsync(Guid id);
 
 		Task<IEnumerable<ArchiveEntryModel>> GetItemsAsync(bool forceRefresh = false);
+
+		Task<long> AddFromPathAsync(Guid id, string path);
+		Task<byte[]> GetBytesFromIdAsync(Guid id);
 	}
 }
