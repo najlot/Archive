@@ -11,6 +11,7 @@ namespace Archive.ClientBase.ViewModel
 {
 	public class AllArchiveEntriesViewModel : AbstractViewModel, IDisposable
 	{
+		private readonly Func<ArchiveEntryViewModel> _archiveEntryViewModelFactory;
 		private readonly IArchiveEntryService _archiveEntryService;
 		private readonly INavigationService _navigationService;
 		private readonly IMessenger _messenger;
@@ -38,11 +39,14 @@ namespace Archive.ClientBase.ViewModel
 		public ObservableCollectionView<ArchiveEntryViewModel> ArchiveEntriesView { get; }
 		public ObservableCollection<ArchiveEntryViewModel> ArchiveEntries { get; } = new ObservableCollection<ArchiveEntryViewModel>();
 
-		public AllArchiveEntriesViewModel(IErrorService errorService,
+		public AllArchiveEntriesViewModel(
+			Func<ArchiveEntryViewModel> archiveEntryViewModelFactory,
+			IErrorService errorService,
 			IArchiveEntryService archiveEntryService,
 			INavigationService navigationService,
 			IMessenger messenger)
 		{
+			_archiveEntryViewModelFactory = archiveEntryViewModelFactory;
 			_errorService = errorService;
 			_archiveEntryService = archiveEntryService;
 			_navigationService = navigationService;
@@ -111,21 +115,21 @@ namespace Archive.ClientBase.ViewModel
 
 		private void Handle(ArchiveEntryCreated obj)
 		{
+			var viewModel = _archiveEntryViewModelFactory();
 
-			ArchiveEntries.Insert(0, new ArchiveEntryViewModel(
-				_errorService,
-				new Models.ArchiveEntryModel()
-				{
-					Id = obj.Id,
-					Date = obj.Date,
-					Description = obj.Description,
-					Groups = obj.Groups,
-					OriginalName = obj.OriginalName,
-					IsFolder = obj.IsFolder,
-					FileSize = obj.FileSize,
-				},
-				_navigationService,
-				_messenger));
+
+			viewModel.Item = new Models.ArchiveEntryModel()
+			{
+				Id = obj.Id,
+				Date = obj.Date,
+				Description = obj.Description,
+				Groups = obj.Groups,
+				OriginalName = obj.OriginalName,
+				IsFolder = obj.IsFolder,
+				FileSize = obj.FileSize,
+			};
+
+			ArchiveEntries.Insert(0, viewModel);
 		}
 
 		private void Handle(ArchiveEntryUpdated obj)
@@ -148,21 +152,21 @@ namespace Archive.ClientBase.ViewModel
 				index = 0;
 			}
 
+			var viewModel = _archiveEntryViewModelFactory();
 
-			ArchiveEntries.Insert(index, new ArchiveEntryViewModel(
-				_errorService,
-				new Models.ArchiveEntryModel()
-				{
-					Id = obj.Id,
-					Date = obj.Date,
-					Description = obj.Description,
-					Groups = obj.Groups,
-					OriginalName = obj.OriginalName,
-					IsFolder = obj.IsFolder,
-					FileSize = obj.FileSize,
-				},
-				_navigationService,
-				_messenger));
+
+			viewModel.Item = new Models.ArchiveEntryModel()
+			{
+				Id = obj.Id,
+				Date = obj.Date,
+				Description = obj.Description,
+				Groups = obj.Groups,
+				OriginalName = obj.OriginalName,
+				IsFolder = obj.IsFolder,
+				FileSize = obj.FileSize,
+			};
+
+			ArchiveEntries.Insert(index, viewModel);
 		}
 
 		private void Handle(ArchiveEntryDeleted obj)
@@ -203,20 +207,18 @@ namespace Archive.ClientBase.ViewModel
 				// Prevalidate
 				item.SetValidation(new ArchiveEntryValidationList(), true);
 
+				var viewModel = _archiveEntryViewModelFactory();
 
-				var vm = new ArchiveEntryViewModel(
-					_errorService,
-					item,
-					_navigationService,
-					_messenger);
 
-				_messenger.Register<EditArchiveGroup>(vm.Handle);
-				_messenger.Register<DeleteArchiveGroup>(vm.Handle);
-				_messenger.Register<SaveArchiveGroup>(vm.Handle);
+				viewModel.Item = item;
 
-				_messenger.Register<ArchiveEntryUpdated>(vm.Handle);
+				_messenger.Register<EditArchiveGroup>(viewModel.Handle);
+				_messenger.Register<DeleteArchiveGroup>(viewModel.Handle);
+				_messenger.Register<SaveArchiveGroup>(viewModel.Handle);
 
-				await _navigationService.NavigateForward(vm);
+				_messenger.Register<ArchiveEntryUpdated>(viewModel.Handle);
+
+				await _navigationService.NavigateForward(viewModel);
 			}
 			catch (Exception ex)
 			{
@@ -264,17 +266,16 @@ namespace Archive.ClientBase.ViewModel
 				// Prevalidate
 				item.SetValidation(new ArchiveEntryValidationList(), true);
 
-				var itemVm = new ArchiveEntryViewModel(
-					_errorService,
-					item,
-					_navigationService,
-					_messenger);
+				var viewModel = _archiveEntryViewModelFactory();
 
-				_messenger.Register<EditArchiveGroup>(itemVm.Handle);
-				_messenger.Register<DeleteArchiveGroup>(itemVm.Handle);
-				_messenger.Register<SaveArchiveGroup>(itemVm.Handle);
 
-				await _navigationService.NavigateForward(itemVm);
+				viewModel.Item = item;
+
+				_messenger.Register<EditArchiveGroup>(viewModel.Handle);
+				_messenger.Register<DeleteArchiveGroup>(viewModel.Handle);
+				_messenger.Register<SaveArchiveGroup>(viewModel.Handle);
+
+				await _navigationService.NavigateForward(viewModel);
 			}
 			catch (Exception ex)
 			{
@@ -306,13 +307,12 @@ namespace Archive.ClientBase.ViewModel
 
 				foreach (var item in archiveEntries)
 				{
-					var vm = new ArchiveEntryViewModel(
-						_errorService,
-						item,
-						_navigationService,
-						_messenger);
+					var viewModel = _archiveEntryViewModelFactory();
 
-					ArchiveEntries.Add(vm);
+
+					viewModel.Item = item;
+
+					ArchiveEntries.Add(viewModel);
 				}
 			}
 			catch (Exception ex)

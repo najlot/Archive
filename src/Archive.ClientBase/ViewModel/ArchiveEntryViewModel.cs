@@ -16,41 +16,55 @@ namespace Archive.ClientBase.ViewModel
 		private bool _isBusy;
 		private ArchiveEntryModel _item;
 
+
+		private readonly Func<ArchiveGroupViewModel> _archiveGroupViewModelFactory;
 		private readonly IErrorService _errorService;
 		private readonly INavigationService _navigationService;
 		private readonly IMessenger _messenger;
 
-		public ArchiveEntryModel Item { get => _item; private set => Set(nameof(Item), ref _item, value); }
+		public ArchiveEntryModel Item
+		{
+			get => _item;
+			set
+			{
+				Set(nameof(Item), ref _item, value);
+
+				if (Item.Groups == null)
+				{
+					Groups = new ObservableCollection<ArchiveGroupViewModel>();
+				}
+				else
+				{
+					Groups = new ObservableCollection<ArchiveGroupViewModel>(Item.Groups.Select(e =>
+					{
+						var model = new ArchiveGroupModel()
+						{
+							Id = e.Id,
+							GroupName = e.GroupName,
+						};
+
+						var viewModel = _archiveGroupViewModelFactory();
+						viewModel.ParentId = Item.Id;
+						viewModel.Item = model;
+						return viewModel;
+					}));
+				}
+			}
+		}
+
 		public bool IsBusy { get => _isBusy; private set => Set(nameof(IsBusy), ref _isBusy, value); }
 
 		public ArchiveEntryViewModel(
+			Func<ArchiveGroupViewModel> archiveGroupViewModelFactory,
 			IErrorService errorService,
-			ArchiveEntryModel archiveEntryModel,
 			INavigationService navigationService,
 			IMessenger messenger)
 		{
-			Item = archiveEntryModel;
+			_archiveGroupViewModelFactory = archiveGroupViewModelFactory;
+
 			_errorService = errorService;
 			_navigationService = navigationService;
 			_messenger = messenger;
-
-			if (Item.Groups == null)
-			{
-				Groups = new ObservableCollection<ArchiveGroupViewModel>();
-			}
-			else
-			{
-				Groups = new ObservableCollection<ArchiveGroupViewModel>(Item.Groups.Select(e =>
-				{
-					var model = new ArchiveGroupModel()
-					{
-						Id = e.Id,
-						GroupName = e.GroupName,
-					};
-
-					return new ArchiveGroupViewModel(_errorService, model, _navigationService, _messenger, Item.Id);
-				}));
-			}
 
 			SaveCommand = new AsyncCommand(SaveAsync, DisplayError);
 			DeleteCommand = new AsyncCommand(DeleteAsync, DisplayError);
@@ -88,7 +102,10 @@ namespace Archive.ClientBase.ViewModel
 					GroupName = e.GroupName,
 				};
 
-				return new ArchiveGroupViewModel(_errorService, model, _navigationService, _messenger, Item.Id);
+				var viewModel = _archiveGroupViewModelFactory();
+				viewModel.ParentId = Item.Id;
+				viewModel.Item = model;
+				return viewModel;
 			}));
 		}
 

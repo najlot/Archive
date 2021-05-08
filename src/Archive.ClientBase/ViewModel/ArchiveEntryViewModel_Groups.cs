@@ -27,9 +27,11 @@ namespace Archive.ClientBase.ViewModel
 
 			var model = new ArchiveGroupModel() { Id = max };
 
-			var vm = new ArchiveGroupViewModel(_errorService, model, _navigationService, _messenger, Item.Id);
+			var viewModel = _archiveGroupViewModelFactory();
+			viewModel.ParentId = Item.Id;
+			viewModel.Item = model;
 
-			Groups.Add(vm);
+			Groups.Add(viewModel);
 		});
 
 		public async Task Handle(DeleteArchiveGroup obj)
@@ -80,14 +82,11 @@ namespace Archive.ClientBase.ViewModel
 				// Prevalidate
 				vm.Item.SetValidation(new ArchiveGroupValidationList(), true);
 
-				vm = new ArchiveGroupViewModel(
-					_errorService,
-					vm.Item,
-					_navigationService,
-					_messenger,
-					Item.Id);
+				var viewModel = _archiveGroupViewModelFactory();
+				viewModel.ParentId = Item.Id;
+				viewModel.Item = vm.Item;
 
-				await _navigationService.NavigateForward(vm);
+				await _navigationService.NavigateForward(viewModel);
 			}
 			catch (Exception ex)
 			{
@@ -121,23 +120,17 @@ namespace Archive.ClientBase.ViewModel
 					}
 				}
 
+				var viewModel = _archiveGroupViewModelFactory();
+				viewModel.ParentId = Item.Id;
+				viewModel.Item = obj.Item;
+
 				if (index == -1)
 				{
-					Groups.Insert(0, new ArchiveGroupViewModel(
-						_errorService,
-						obj.Item,
-						_navigationService,
-						_messenger,
-						Item.Id));
+					Groups.Insert(0, viewModel);
 				}
 				else
 				{
-					Groups.Insert(index, new ArchiveGroupViewModel(
-						_errorService,
-						obj.Item,
-						_navigationService,
-						_messenger,
-						Item.Id));
+					Groups.Insert(index, viewModel);
 				}
 			}
 			catch (Exception ex)
