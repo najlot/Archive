@@ -15,27 +15,32 @@ namespace Archive.ClientBase.ViewModel
 	{
 		private bool _isBusy;
 		private ArchiveGroupModel _item;
+		private Guid _parentId;
 
 		private readonly IErrorService _errorService;
 		private readonly INavigationService _navigationService;
 		private readonly IMessenger _messenger;
-		private readonly Guid _parentId;
 
-		public ArchiveGroupModel Item { get => _item; private set => Set(nameof(Item), ref _item, value); }
+		public ArchiveGroupModel Item
+		{
+			get => _item;
+			set
+			{
+				Set(nameof(Item), ref _item, value);
+			}
+		}
+
 		public bool IsBusy { get => _isBusy; private set => Set(nameof(IsBusy), ref _isBusy, value); }
+		public Guid ParentId { get => _parentId; set => Set(nameof(ParentId), ref _parentId, value); }
 
 		public ArchiveGroupViewModel(
 			IErrorService errorService,
-			ArchiveGroupModel archiveGroupModel,
 			INavigationService navigationService,
-			IMessenger messenger,
-			Guid parentId)
+			IMessenger messenger)
 		{
-			Item = archiveGroupModel;
 			_errorService = errorService;
 			_navigationService = navigationService;
 			_messenger = messenger;
-			_parentId = parentId;
 
 			SaveCommand = new AsyncCommand(SaveAsync, DisplayError);
 			DeleteCommand = new AsyncCommand<bool>(DeleteAsync, DisplayError);

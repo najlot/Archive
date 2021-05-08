@@ -40,12 +40,21 @@ namespace Archive.Wpf.ViewModel
 
 			// Register viewmodels
 			serviceCollection.AddSingleton<LoginViewModel>();
+			serviceCollection.AddTransient<ProfileViewModel>();
+			serviceCollection.AddSingleton<Func<ProfileViewModel>>(c => () => c.GetRequiredService<ProfileViewModel>());
 			serviceCollection.AddTransient<LoginProfileViewModel>();
 			serviceCollection.AddSingleton<Func<LoginProfileViewModel>>(c => () => c.GetRequiredService<LoginProfileViewModel>());
 			serviceCollection.AddScoped<MenuViewModel>();
 
 			serviceCollection.AddScoped<AllArchiveEntriesViewModel>();
 			serviceCollection.AddScoped<AllUsersViewModel>();
+
+			serviceCollection.AddTransient<ArchiveEntryViewModel>();
+			serviceCollection.AddSingleton<Func<ArchiveEntryViewModel>>(c => () => c.GetRequiredService<ArchiveEntryViewModel>());
+			serviceCollection.AddTransient<ArchiveGroupViewModel>();
+			serviceCollection.AddSingleton<Func<ArchiveGroupViewModel>>(c => () => c.GetRequiredService<ArchiveGroupViewModel>());
+			serviceCollection.AddTransient<UserViewModel>();
+			serviceCollection.AddSingleton<Func<UserViewModel>>(c => () => c.GetRequiredService<UserViewModel>());
 
 			serviceCollection.AddSingleton<INavigationService>(Main);
 

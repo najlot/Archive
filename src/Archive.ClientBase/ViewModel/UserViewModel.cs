@@ -20,18 +20,24 @@ namespace Archive.ClientBase.ViewModel
 		private readonly INavigationService _navigationService;
 		private readonly IMessenger _messenger;
 
-		public UserModel Item { get => _item; private set => Set(nameof(Item), ref _item, value); }
+		public UserModel Item
+		{
+			get => _item;
+			set
+			{
+				Set(nameof(Item), ref _item, value);
+			}
+		}
+
 		public bool IsBusy { get => _isBusy; private set => Set(nameof(IsBusy), ref _isBusy, value); }
 		public bool CanModifyUsername { get; private set; }
 
 		public UserViewModel(
 			IErrorService errorService,
-			UserModel userModel,
 			INavigationService navigationService,
 			IMessenger messenger,
 			bool canModifyUsername = false)
 		{
-			Item = userModel;
 			_errorService = errorService;
 			_navigationService = navigationService;
 			_messenger = messenger;

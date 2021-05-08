@@ -18,12 +18,44 @@ namespace Archive.ClientBase.ViewModel
 		private ArchiveEntryModel _item;
 		private string _path;
 		private string _groupToAdd;
+
+
+		private readonly Func<ArchiveGroupViewModel> _archiveGroupViewModelFactory;
 		private readonly IErrorService _errorService;
 		private readonly INavigationService _navigationService;
 		private readonly IDiskSearcher _diskSearcher;
 		private readonly IMessenger _messenger;
 
-		public ArchiveEntryModel Item { get => _item; private set => Set(nameof(Item), ref _item, value); }
+		public ArchiveEntryModel Item
+		{
+			get => _item;
+			set
+			{
+				Set(nameof(Item), ref _item, value);
+
+				if (Item.Groups == null)
+				{
+					Groups = new ObservableCollection<ArchiveGroupViewModel>();
+				}
+				else
+				{
+					Groups = new ObservableCollection<ArchiveGroupViewModel>(Item.Groups.Select(e =>
+					{
+						var model = new ArchiveGroupModel()
+						{
+							Id = e.Id,
+							GroupName = e.GroupName,
+						};
+
+						var viewModel = _archiveGroupViewModelFactory();
+						viewModel.ParentId = Item.Id;
+						viewModel.Item = model;
+						return viewModel;
+					}));
+				}
+			}
+		}
+
 		public bool IsBusy { get => _isBusy; private set => Set(nameof(IsBusy), ref _isBusy, value); }
 
 		public AsyncCommand ExportCommand { get; }
@@ -36,37 +68,18 @@ namespace Archive.ClientBase.ViewModel
 		public string GroupToAdd { get => _groupToAdd; set => Set(nameof(GroupToAdd), ref _groupToAdd, value); }
 
 		public ArchiveEntryViewModel(
+			Func<ArchiveGroupViewModel> archiveGroupViewModelFactory,
 			IErrorService errorService,
-			ArchiveEntryModel archiveEntryModel,
 			INavigationService navigationService,
 			IDiskSearcher diskSearcher,
 			IMessenger messenger)
 		{
-			Item = archiveEntryModel;
+			_archiveGroupViewModelFactory = archiveGroupViewModelFactory;
+
 			_errorService = errorService;
 			_navigationService = navigationService;
-			_diskSearcher = diskSearcher;
 			_messenger = messenger;
-
-			if (Item.Groups == null)
-			{
-				Groups = new ObservableCollection<ArchiveGroupViewModel>();
-			}
-			else
-			{
-				Groups = new ObservableCollection<ArchiveGroupViewModel>(Item.Groups.Select(e =>
-				{
-					var model = new ArchiveGroupModel()
-					{
-						Id = e.Id,
-						GroupName = e.GroupName,
-					};
-
-					return new ArchiveGroupViewModel(_errorService, model, _navigationService, _messenger, Item.Id);
-				}));
-			}
-
-			ExportCommand = new AsyncCommand(ExportAsync, DisplayError, () => _canExport);
+			_diskSearcher = diskSearcher;
 
 			SaveCommand = new AsyncCommand(SaveAsync, DisplayError);
 			DeleteCommand = new AsyncCommand(DeleteAsync, DisplayError);
@@ -193,7 +206,10 @@ namespace Archive.ClientBase.ViewModel
 					GroupName = e.GroupName,
 				};
 
-				return new ArchiveGroupViewModel(_errorService, model, _navigationService, _messenger, Item.Id);
+				var viewModel = _archiveGroupViewModelFactory();
+				viewModel.ParentId = Item.Id;
+				viewModel.Item = model;
+				return viewModel;
 			}));
 		}
 
