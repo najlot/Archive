@@ -53,17 +53,14 @@ namespace Archive.ClientBase.ViewModel
 						return viewModel;
 					}));
 				}
+
+				Path = Item.OriginalName;
 			}
 		}
 
 		public bool IsBusy { get => _isBusy; private set => Set(nameof(IsBusy), ref _isBusy, value); }
 
-		public AsyncCommand ExportCommand { get; }
-		public AsyncCommand SelectFileCommand { get; }
-		public AsyncCommand SelectFolderCommand { get; }
-		public AsyncCommand AddGroupCommand { get; }
-		public AsyncCommand<string> RemoveGroupCommand { get; }
-		public ObservableCollection<string> AvailableGroups { get; }
+		public ObservableCollection<string> AvailableGroups { get; } = new ObservableCollection<string>();
 		public string Path { get => _path; set => Set(nameof(Path), ref _path, value); }
 		public string GroupToAdd { get => _groupToAdd; set => Set(nameof(GroupToAdd), ref _groupToAdd, value); }
 
@@ -90,8 +87,7 @@ namespace Archive.ClientBase.ViewModel
 
 			AddGroupCommand = new AsyncCommand(AddGroupAsync, DisplayError);
 			RemoveGroupCommand = new AsyncCommand<string>(RemoveGroupAsync, DisplayError);
-
-			Path = Item.OriginalName;
+			ExportCommand = new AsyncCommand(ExportAsync, DisplayError);
 		}
 
 		private async Task DisplayError(Task task)
@@ -101,6 +97,7 @@ namespace Archive.ClientBase.ViewModel
 
 		public bool _canExport = true;
 
+		public AsyncCommand ExportCommand { get; }
 		private async Task ExportAsync()
 		{
 			_canExport = false;
@@ -123,19 +120,21 @@ namespace Archive.ClientBase.ViewModel
 			}
 		}
 
+		public AsyncCommand AddGroupCommand { get; }
 		private Task AddGroupAsync()
 		{
-			if (!string.IsNullOrWhiteSpace(GroupToAdd))
+			if (!string.IsNullOrWhiteSpace(GroupToAdd) && Groups.All(g => g.Item.GroupName != GroupToAdd))
 			{
-				Groups.Add(new ArchiveGroupViewModel(_errorService,
-					new ArchiveGroupModel()
-					{
-						Id = Groups.Count + 1,
-						GroupName = GroupToAdd
-					},
-					_navigationService,
-					_messenger,
-					Item.Id));
+				var viewModel = _archiveGroupViewModelFactory();
+
+				viewModel.ParentId = Item.Id;
+				viewModel.Item = new ArchiveGroupModel()
+				{
+					Id = Groups.Count + 1,
+					GroupName = GroupToAdd
+				};
+
+				Groups.Add(viewModel);
 			}
 
 			GroupToAdd = "";
@@ -143,6 +142,7 @@ namespace Archive.ClientBase.ViewModel
 			return Task.CompletedTask;
 		}
 
+		public AsyncCommand<string> RemoveGroupCommand { get; }
 		private Task RemoveGroupAsync(string name)
 		{
 			if (!string.IsNullOrWhiteSpace(name))
@@ -160,6 +160,7 @@ namespace Archive.ClientBase.ViewModel
 			return Task.CompletedTask;
 		}
 
+		public AsyncCommand SelectFileCommand { get; }
 		private async Task SelectFileAsync()
 		{
 			var path = await _diskSearcher.SelectFileAsync();
@@ -170,6 +171,7 @@ namespace Archive.ClientBase.ViewModel
 			}
 		}
 
+		public AsyncCommand SelectFolderCommand { get; }
 		private async Task SelectFolderAsync()
 		{
 			var path = await _diskSearcher.SelectFolderAsync();
