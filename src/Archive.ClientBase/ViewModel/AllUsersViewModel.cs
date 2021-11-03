@@ -6,6 +6,7 @@ using Archive.Contracts;
 using Archive.ClientBase.Messages;
 using Archive.ClientBase.Services;
 using Archive.ClientBase.Validation;
+using Archive.ClientBase.Localisation;
 
 namespace Archive.ClientBase.ViewModel
 {
@@ -98,7 +99,7 @@ namespace Archive.ClientBase.ViewModel
 
 		private async Task DisplayError(Task task)
 		{
-			await _errorService.ShowAlertAsync("Error...", task.Exception);
+			await _errorService.ShowAlertAsync(CommonLoc.Error, task.Exception);
 		}
 
 		private void Handle(UserCreated obj)
