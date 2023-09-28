@@ -56,5 +56,5 @@ namespace Archive.Service.Query
 				}
 			}
 		}
-	}
+    }
 }

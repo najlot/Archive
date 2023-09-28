@@ -57,7 +57,13 @@ namespace Archive.Service.Services
 
 		public async Task SaveBytesAsync(Guid id, byte[] bytes)
 		{
-			await File.WriteAllBytesAsync(Path.Combine(_blobConfiguration.BlobsPath, id.ToString()), bytes);
+			var targetFilePath = Path.Combine(_blobConfiguration.BlobsPath, id.ToString());
+			await File.WriteAllBytesAsync(targetFilePath, bytes);
+		}
+
+		public Stream GetBlobStream(Guid id)
+		{
+			return File.OpenRead(Path.Combine(_blobConfiguration.BlobsPath, id.ToString()));
 		}
 
 		public async Task<byte[]> GetBytesAsync(Guid id)
@@ -133,7 +139,7 @@ namespace Archive.Service.Services
 
 		public async IAsyncEnumerable<ArchiveEntry> GetItemsForUserAsync(string userName)
 		{
-			await foreach (var item in _archiveEntryQuery.GetAllAsync().OrderByDescending(e => e.Date))
+			await foreach (var item in _archiveEntryQuery.GetAllOrderedByDateAsync())
 			{
 				yield return new ArchiveEntry
 				{
