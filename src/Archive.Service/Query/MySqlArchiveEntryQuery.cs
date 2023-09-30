@@ -63,5 +63,23 @@ namespace Archive.Service.Query
 				}
 			}
 		}
-	}
+
+        public async IAsyncEnumerable<ArchiveEntryModel> GetAllOrderedByDateAsync()
+        {
+            using var db = new MySqlConnection(_connectionString);
+			var items = await db.QueryAsync<ArchiveEntryModel>("SELECT * FROM ArchiveEntries ORDER BY Date");
+			var groups = await db.QueryAsync<ExtendedArchiveGroup>("SELECT * FROM ArchiveEntry_Groups");
+		
+			foreach (var item in items)
+			{
+				item.Groups = groups.Where(x => x.ArchiveEntryModelId == item.Id).ToList<ArchiveGroup>();
+				yield return item;
+			}
+        }
+
+		private class ExtendedArchiveGroup : ArchiveGroup
+		{
+			public Guid ArchiveEntryModelId { get; set; }
+		}
+    }
 }

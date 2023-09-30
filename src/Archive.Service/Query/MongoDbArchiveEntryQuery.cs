@@ -1,15 +1,13 @@
 ﻿using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Archive.Contracts;
 using Archive.Service.Model;
 
 namespace Archive.Service.Query
 {
-	public class MongoDbArchiveEntryQuery : IArchiveEntryQuery
+    public class MongoDbArchiveEntryQuery : IArchiveEntryQuery
 	{
 		private readonly IMongoCollection<ArchiveEntryModel> _collection;
 
@@ -34,6 +32,21 @@ namespace Archive.Service.Query
 		public async IAsyncEnumerable<ArchiveEntryModel> GetAllAsync()
 		{
 			var items = await _collection.FindAsync(FilterDefinition<ArchiveEntryModel>.Empty);
+			
+			while (await items.MoveNextAsync())
+			{
+				foreach (var item in items.Current)
+				{
+					yield return item;
+				}
+			}
+		}
+
+		public async IAsyncEnumerable<ArchiveEntryModel> GetAllOrderedByDateAsync()
+		{
+			var items = await _collection.Find(FilterDefinition<ArchiveEntryModel>.Empty)
+				.SortByDescending(x => x.Date)
+				.ToCursorAsync();
 			
 			while (await items.MoveNextAsync())
 			{

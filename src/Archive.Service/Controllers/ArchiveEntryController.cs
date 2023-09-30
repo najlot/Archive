@@ -41,10 +41,10 @@ namespace Archive.Service.Controllers
 		}
 
 		[HttpGet("[action]/{id}")]
-		public async Task<FileContentResult> GetFile(Guid id)
+		public FileStreamResult GetFile(Guid id)
 		{
-			var bytes = await _archiveEntryService.GetBytesAsync(id);
-			return File(bytes, "application/octet-stream");
+			var blobStream = _archiveEntryService.GetBlobStream(id);
+			return File(blobStream, "application/octet-stream");
 		}
 
 		[HttpPost("[action]")]

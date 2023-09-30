@@ -50,6 +50,22 @@ namespace Archive.Service.Query
 			}
 		}
 
+		public IAsyncEnumerable<ArchiveEntryModel> GetAllOrderedByDateAsync()
+		{
+			async IAsyncEnumerable<ArchiveEntryModel> Inner()
+			{
+				foreach (var path in Directory.GetFiles(_storagePath))
+				{
+					var bytes = await File.ReadAllBytesAsync(path);
+					var text = Encoding.UTF8.GetString(bytes);
+					var item = JsonSerializer.Deserialize<ArchiveEntryModel>(text, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+					yield return item;
+				}
+			}
+
+			return Inner().OrderByDescending(x => x.Date);
+		}
+
 		public async IAsyncEnumerable<ArchiveEntryModel> GetAllAsync(Expression<Func<ArchiveEntryModel, bool>> predicate)
 		{
 			var check = predicate.Compile();
